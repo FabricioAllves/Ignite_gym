@@ -13,7 +13,6 @@
 🚧 **Em desenvolvimento*** 🚧
 
 
-
 **Frontend:**
 
 - React native - EXPO🌐
