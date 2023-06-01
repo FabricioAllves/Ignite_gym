@@ -20,7 +20,7 @@ type RouteParamsProps = {
 }
 
 export function Exercise() {
-  const [sendingRegister, setSendingRegister] = useState(true)
+  const [sendingRegister, setSendingRegister] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [exercise, setExercise] = useState<ExerciseDTO>({} as ExerciseDTO)
   const navigation = useNavigation<AppNavigatorRoutesProps>();
