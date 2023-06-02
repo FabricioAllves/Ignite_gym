@@ -8,9 +8,10 @@ import { api } from "@services/api";
 
 export type AuthContextDataProps = {
   user: UserDTO;
+  updateUserProfile: (userUpdated: UserDTO) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>
-  isLoadingUserStorageData: boolean
+  signOut: () => Promise<void>;
+  isLoadingUserStorageData: boolean;
 }
 
 type AuthContextProviderProps = {
@@ -78,6 +79,16 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     }
   }
 
+  async function updateUserProfile(userUpdated: UserDTO) {
+    try {
+      setUser(userUpdated)
+      await storageUserSave(userUpdated)
+      
+    } catch (error) {
+      throw error
+    }
+  }
+
   // Esta funçao verifica se o usuario esta logado / salvo no storage para pode direcionar ele na rota
   //depois que carregar tudo ai o estado de loading muda e o usuario vai pra tela Home
   async function loadUserData() {
@@ -104,7 +115,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, isLoadingUserStorageData }}>
+    <AuthContext.Provider value={{ user, signIn, signOut, updateUserProfile, isLoadingUserStorageData }}>
       {children}
     </AuthContext.Provider>
   )

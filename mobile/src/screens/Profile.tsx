@@ -7,6 +7,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import * as yup from 'yup'
 
+import { api } from '@services/api';
+import { AppError } from '@utils/AppError';
+
 import { useAuth } from '@hooks/useAuth';
 
 import { ScreenHeader } from '@components/ScreenHeader';
@@ -26,15 +29,31 @@ type FormDataProps = {
 }
 
 const profileSchema = yup.object({
-  name: yup.string().required('Informe o nome.')
+  name: yup.string().required('Informe o nome'),
+  password: yup
+    .string()
+    .min(6, 'A senha deve ter pelo menos 6 dígitos.')
+    .nullable()
+    .transform((value) => (!!value ? value : null)),
+  confirm_password: yup
+    .string()
+    .nullable()
+    .transform((value) => (!!value ? value : null))
+    .oneOf([yup.ref('password'), null], 'As senhas devem ser iguais.')
+    .when('password', {
+      is: (Field: any) => Field,
+      then: (schema) =>
+        schema.nullable().required('Informe a confirmação da senha.'),
+    }),
 })
 
 export function Profile() {
+  const [isUpdating, setIsUpdating] = useState(false)
   const [photoIsLoading, setPhotoIsLoading] = useState(false)
   const [userPhoto, setUserPhoto] = useState('https://github.com/FabricioAllves.png');
 
   const toast = useToast();
-  const { user } = useAuth()
+  const { user, updateUserProfile } = useAuth()
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({
     defaultValues: {
@@ -81,7 +100,34 @@ export function Profile() {
   }
 
   async function handleProfileUpdate(data: FormDataProps) {
-    console.log(data)
+    try {
+      setIsUpdating(true)
+      const userUpdated = user;
+      userUpdated.name = data.name
+
+      await api.put('/users', data)
+
+      await updateUserProfile(userUpdated)
+
+      toast.show({
+        title: 'Perfil atualizado com sucesso!',
+        placement: 'top',
+        bgColor: 'green.500'
+      })
+
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+
+      const title = isAppError ? error.message : 'Não foi possivel atualizar os dados. Tente novamente mais tarde.'
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500'
+      })
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   return (
@@ -113,7 +159,7 @@ export function Profile() {
 
           <Controller
             control={control}
-            name='name'
+            name="name"
             render={({ field: { value, onChange } }) => (
               <Input
                 placeholder='Nome'
@@ -127,7 +173,7 @@ export function Profile() {
 
           <Controller
             control={control}
-            name='email'
+            name="email"
             render={({ field: { value, onChange } }) => (
               <Input
                 placeholder='E-mail'
@@ -145,20 +191,21 @@ export function Profile() {
 
           <Controller
             control={control}
-            name='old_password'
+            name="old_password"
             render={({ field: { onChange } }) => (
               <Input
                 bg='gray.600'
                 placeholder='Senha antiga'
                 secureTextEntry
                 onChangeText={onChange}
+                errorMessage={errors.old_password?.message}
               />
             )}
           />
 
           <Controller
             control={control}
-            name='password'
+            name="password"
             render={({ field: { onChange } }) => (
               <Input
                 bg='gray.600'
@@ -172,7 +219,7 @@ export function Profile() {
 
           <Controller
             control={control}
-            name='confirm_password'
+            name="confirm_password"
             render={({ field: { value, onChange } }) => (
               <Input
                 bg='gray.600'
@@ -189,6 +236,7 @@ export function Profile() {
             title='Atualizar senha'
             mt={4}
             onPress={handleSubmit(handleProfileUpdate)}
+            isLoading={isUpdating}
           />
         </Center>
       </ScrollView>
