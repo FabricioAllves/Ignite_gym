@@ -88,8 +88,16 @@ export function Profile() {
             bgColor: 'red.500'
           })
         }
+        //Retornando a extensao da image
+        const fileExtension = photoSelected.assets[0].uri.split('.').pop();
 
-        setUserPhoto(photoSelected.assets[0].uri)
+        const photoFile = {
+          name: `${user.name}.${fileExtension}`.toLowerCase(),
+          uri: photoSelected.assets[0].uri,
+          type: `${photoSelected.assets[0].type}/${fileExtension}`
+        }
+
+        console.log(photoFile)
       }
 
     } catch (error) {
